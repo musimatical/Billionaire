@@ -1,0 +1,40 @@
+import socket
+import sys
+import json
+
+# Create a TCP/IP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Connect the socket to the port where the server is listening
+server_address = ('localhost', 10000)
+print('connecting to {} port {}'.format(*server_address))
+sock.connect(server_address)
+
+try:
+
+    # Look for the response
+    amount_received = 0
+    amount_expected = 16
+
+    while amount_received < amount_expected:
+        data = sock.recv(16)
+        amount_received += len(data)
+        print('received {!r}'.format(data))
+    
+    current_hand, current_trades, last_trade = json.loads(data)
+    
+    # Send data
+    message = json.dumps(decision(current_hand, current_trades, last_trade))
+    print('sending {!r}'.format(message))
+    sock.sendall(message)
+
+finally:
+    print('closing socket')
+    sock.close()
+
+def decision(current_hand, current_trades, last_trade):
+    # current_hand looks like ('O','O','P','G','P','O','F','F','B'), etc
+    # current_trades looks like [(2, 'Hamish'), (4, 'Ben')], i.e. there's a 2 trade and 4 trade available
+    # last_trade looks like (3, 'Sam', 'Harry')
+    # returns a trade in the form {'commodity':'F', 'number':2, 'billionaire':True, 'taxman':False, 'victory':False}
+    # number is the number of the commodity, excluding billionaire/taxman
